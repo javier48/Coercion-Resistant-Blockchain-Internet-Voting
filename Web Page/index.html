@@ -1,0 +1,711 @@
+<html>
+	<head>
+		<style>
+		table {
+		  font-family: arial, sans-serif;
+		  border-collapse: collapse;
+		  width: 60%;
+		}
+		
+		td, th {
+		  border: 1px solid #dddddd;
+		  text-align: left;
+		  padding: 10px;
+		}
+		
+		tr:nth-child(even) {
+		  background-color: #dddddd;
+		}
+		</style>
+	</head>
+    <body>
+		<div class="container">
+			<h1>Voter Login</h1>
+			  
+				  <label>User ID</label><br>
+				  <input id="uid" type="text"><br>
+				  <label>Password</label><br>
+				  <input id="pass" type="password"><br><br>
+				  <button id='login'>Log in</button><br><br>
+
+				  <a href="http://localhost:8080/RegistVoter.html?">Voter registration page</a> <br>
+				  <a href="http://localhost:8080/VID.html?">VID</a> 
+		</div> 
+
+        <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/core.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/sha256.js"></script>
+
+        <script>
+			function passvalues(){
+				var txtAddress = document.getElementById("uid").value;
+				localStorage.setItem("textvalue",txtAddress);
+				return false;
+			}
+
+			var isPassReal = true;
+			function passcheck(){
+				localStorage.setItem("passcheck",isPassReal);
+				return false;
+			}
+            var contract;
+
+            $(document).ready(function(){
+                web3 = new Web3(web3.currentProvider);
+
+                var address = "0x630fdf66acBFcd3f7E33034Bb639B478805d0Bd2"; //Replace with your deployed smart contract address here
+                var abi = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "logaddr",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "passwordReal",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "passwordFake",
+				"type": "string"
+			}
+		],
+		"name": "userCreated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			}
+		],
+		"name": "addCandidate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "candidatecount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "candidates",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "voteCount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_logaddr",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_passwordReal",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_passwordFake",
+				"type": "string"
+			}
+		],
+		"name": "createUser",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_voteraddr",
+				"type": "string"
+			}
+		],
+		"name": "fakevote",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "fakevoters",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "voterid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "addr",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "vid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votefor",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_logaddr",
+				"type": "string"
+			}
+		],
+		"name": "getaddr",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			}
+		],
+		"name": "getcount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getfakevid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getfakevotefor",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getfakevoter",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			}
+		],
+		"name": "getid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			}
+		],
+		"name": "getname",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_logaddr",
+				"type": "string"
+			}
+		],
+		"name": "getpasswordFake",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_logaddr",
+				"type": "string"
+			}
+		],
+		"name": "getpasswordReal",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getvid",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getvotefor",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_AddressInt",
+				"type": "uint256"
+			}
+		],
+		"name": "getvoteforint",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			}
+		],
+		"name": "getvoter",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_reducecandidateid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_voteraddr",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_AddressInt",
+				"type": "uint256"
+			}
+		],
+		"name": "multiplevote",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_candidateid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_vid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_voteraddr",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_AddressInt",
+				"type": "uint256"
+			}
+		],
+		"name": "realvote",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "userCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "usersList",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "logaddr",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "passwordReal",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "passwordFake",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "voter",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "votercount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "voters",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "voterid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "addr",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "vid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votefor",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+                contract = new web3.eth.Contract(abi, address);
+            })
+
+			$('#login').click(function(){ 
+				passvalues();
+				var userid = document.getElementById("uid").value;
+				var password = document.getElementById("pass").value;
+
+				var salt = "}[Jj3!@?Mo|-ID+=*)%";
+
+				const useridjoin = userid + salt;
+				const passjoin = password + salt;
+				
+				var useridhash = CryptoJS.SHA256(useridjoin)+"";
+				var passhash = CryptoJS.SHA256(passjoin)+"";
+
+
+				
+
+				contract.methods.getaddr(useridhash).call().then(function(addresss){
+					var addrr = addresss; 
+					if (addrr==useridhash){
+						contract.methods.getpasswordReal(useridhash).call().then(function(passreal){
+							var passreall = passreal;
+							if (passreall==passhash){
+								isPassReal = true;
+								passcheck();
+								window.location.href = "http://localhost:8080/Vote.html?";
+							}
+							else{
+								contract.methods.getpasswordFake(useridhash).call().then(function(passfake){
+								var passfakee = passfake;
+								if (passfakee==passhash){
+									isPassReal = false;
+									passcheck();
+									window.location.href = "http://localhost:8080/Vote.html?";
+								}
+								else{alert("Public key or password is wrong!");}
+								})
+							}
+						})
+					}
+					else{
+						alert("Public key or password is wrong!");
+					}
+					
+				})
+
+				
+
+				//var addr = document.getElementById("key").value;
+				//contract.methods.getaddr(addr).call().then(function(name){
+					//var namee = name; 
+					//if (namee==addr){
+						//$('#cad1').html(namee);
+						//window.location.href = "http://localhost:8080/login.html?";
+					//}
+					//else{
+						//$('#cad1').html("error");
+					//}
+					
+				//})
+				//contract.methods.getpasswordFake(addr).call().then(function(votecount){
+					//var votecountt = votecount;
+					//$('#cad1count').html(votecountt);
+				//})
+			})
+        </script>
+    </body>
+</html>
